@@ -4,6 +4,7 @@ import json
 import librosa
 import soundfile
 import numpy as np
+import requests
 
 import gradio as gr
 from UVR_interface import root, UVRInterface, VR_MODELS_DIR, MDX_MODELS_DIR
@@ -99,17 +100,25 @@ class UVRWebUI:
         for i, (checkbox, callback) in enumerate(zip(checkboxes, pure_callbacks)):
             checkbox.change(exclusive_onchange(i, callback), inputs=checkboxes, outputs=checkboxes)
 
-    def process(self, input_audio, input_filename, model_name, arch, setting1, setting2, progress=gr.Progress()):
+    def process(self, input_audio, input_filename, model_name, arch, setting1, setting2, github_url="", progress=gr.Progress()):
         def set_progress_func(step, inference_iterations=0):
             progress_curr = step + inference_iterations
             progress(progress_curr)
 
-        sampling_rate, audio = input_audio
-        audio = (audio / np.iinfo(audio.dtype).max).astype(np.float32)
-        if len(audio.shape) > 1:
-            audio = librosa.to_mono(audio.transpose(1, 0))
-        input_path = os.path.join(self.input_temp_dir, input_filename)
-        soundfile.write(input_path, audio, sampling_rate, format="wav")
+        if github_url:
+            input_filename = os.path.basename(github_url)
+            input_path = os.path.join(self.input_temp_dir, input_filename)
+            response = requests.get(github_url)
+            with open(input_path, "wb") as file:
+                file.write(response.content)
+            audio, sampling_rate = soundfile.read(input_path)
+        else:
+            sampling_rate, audio = input_audio
+            audio = (audio / np.iinfo(audio.dtype).max).astype(np.float32)
+            if len(audio.shape) > 1:
+                audio = librosa.to_mono(audio.transpose(1, 0))
+            input_path = os.path.join(self.input_temp_dir, input_filename)
+            soundfile.write(input_path, audio, sampling_rate, format="wav")
 
         self.set_arch_setting_value(arch, setting1, setting2)
 
@@ -175,6 +184,7 @@ class UVRWebUI:
 
                     with gr.Row():
                         self.input_filename = gr.Textbox(label="Input filename", value="temp.wav", interactive=True)
+                        self.github_url = gr.Textbox(label="GitHub URL", value="", interactive=True)
                     with gr.Row():
                         self.audio_in = gr.Audio(label="Input audio", interactive=True)
                     with gr.Row():
@@ -206,7 +216,7 @@ class UVRWebUI:
 
             self.process_submit.click(
                 self.process,
-                inputs=[self.audio_in, self.input_filename, self.model_choice, self.arch_choice, self.arch_setting1, self.arch_setting2],
+                inputs=[self.audio_in, self.input_filename, self.model_choice, self.arch_choice, self.arch_setting1, self.arch_setting2, self.github_url],
                 outputs=[self.primary_stem_out, self.secondary_stem_out, self.out_message])
 
     def launch(self, **kwargs):
