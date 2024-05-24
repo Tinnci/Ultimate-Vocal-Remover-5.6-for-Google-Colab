@@ -5,6 +5,7 @@ import librosa
 import soundfile
 import numpy as np
 import requests
+from pydub import AudioSegment
 
 import gradio as gr
 from UVR_interface import root, UVRInterface, VR_MODELS_DIR, MDX_MODELS_DIR
@@ -111,6 +112,13 @@ class UVRWebUI:
             response = requests.get(github_url)
             with open(input_path, "wb") as file:
                 file.write(response.content)
+            
+            # Convert audio to WAV format if it's not already in WAV
+            if not input_filename.endswith(".wav"):
+                audio = AudioSegment.from_file(input_path)
+                input_path = os.path.join(self.input_temp_dir, input_filename.rsplit('.', 1)[0] + ".wav")
+                audio.export(input_path, format="wav")
+            
             audio, sampling_rate = soundfile.read(input_path)
         else:
             sampling_rate, audio = input_audio
