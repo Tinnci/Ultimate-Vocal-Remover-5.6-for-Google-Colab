@@ -39,7 +39,7 @@ class UVRWebUI:
         try:
             model_dir, suffix = model_config[arch]
         except KeyError:
-            raise ValueError(f"Unkown arch type: {arch}")
+            raise ValueError(f"Unknown arch type: {arch}")
         return [os.path.splitext(f)[0] for f in os.listdir(model_dir) if f.endswith(suffix)]
 
     def set_arch_setting_value(self, arch: str, setting1, setting2):
@@ -61,7 +61,7 @@ class UVRWebUI:
             setting1_update = self.arch_setting1.update(choices=BATCH_SIZE, label=BATCHES_MDX_MAIN_LABEL, value=root.mdx_batch_size_var.get())
             setting2_update = self.arch_setting2.update(choices=VOL_COMPENSATION, label=VOL_COMP_MDX_MAIN_LABEL, value=root.compensate_var.get())
         else:
-            raise gr.Error(f"Unkown arch type: {arch}")
+            raise gr.Error(f"Unknown arch type: {arch}")
         return [model_update, setting1_update, setting2_update]
 
     def model_select_update(self, arch: str, model_name: str) -> List[Union[str, Dict, None]]:
@@ -122,7 +122,7 @@ class UVRWebUI:
 
         self.set_arch_setting_value(arch, setting1, setting2)
 
-        seperator = uvr.process(
+        separator = uvr.process(
             model_name=model_name,
             arch_type=arch,
             audio_file=input_path,
@@ -134,16 +134,16 @@ class UVRWebUI:
         primary_audio = None
         secondary_audio = None
         msg = ""
-        if not seperator.is_secondary_stem_only:
-            primary_stem_path = os.path.join(seperator.export_path, f"{seperator.audio_file_base}_({seperator.primary_stem}).wav")
+        if not separator.is_secondary_stem_only:
+            primary_stem_path = os.path.join(separator.export_path, f"{separator.audio_file_base}_({separator.primary_stem}).wav")
             audio, rate = soundfile.read(primary_stem_path)
             primary_audio = (rate, audio)
-            msg += f"{seperator.primary_stem} saved at {primary_stem_path}\n"
-        if not seperator.is_primary_stem_only:
-            secondary_stem_path = os.path.join(seperator.export_path, f"{seperator.audio_file_base}_({seperator.secondary_stem}).wav")
+            msg += f"{separator.primary_stem} saved at {primary_stem_path}\n"
+        if not separator.is_primary_stem_only:
+            secondary_stem_path = os.path.join(separator.export_path, f"{separator.audio_file_base}_({separator.secondary_stem}).wav")
             audio, rate = soundfile.read(secondary_stem_path)
             secondary_audio = (rate, audio)
-            msg += f"{seperator.secondary_stem} saved at {secondary_stem_path}\n"
+            msg += f"{separator.secondary_stem} saved at {secondary_stem_path}\n"
 
         os.remove(input_path)
 
@@ -184,9 +184,10 @@ class UVRWebUI:
 
                     with gr.Row():
                         self.input_filename = gr.Textbox(label="Input filename", value="temp.wav", interactive=True)
-                        self.github_url = gr.Textbox(label="GitHub URL", value="", interactive=True)
                     with gr.Row():
                         self.audio_in = gr.Audio(label="Input audio", interactive=True)
+                    with gr.Row():
+                        self.github_url = gr.Textbox(label="GitHub URL", value="", interactive=True)
                     with gr.Row():
                         self.process_submit = gr.Button(START_PROCESSING, variant="primary")
                     with gr.Row():
